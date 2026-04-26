@@ -1,0 +1,23 @@
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model TelegramUser {
+  id              BigInt  @id
+  subscriptionId  String?
+
+  username        String?
+  firstName       String?
+  lastName        String?
+  languageCode    String?
+  isPremium       Boolean?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+    @@map("telegram_users")
+}

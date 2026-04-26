@@ -1,39 +1,36 @@
 {
-  "name": "frkn-vpn-bot",
-  "version": "1.0.0",
-  "private": true,
-  "main": "index.js",
-  "type": "commonjs",
-  "engines": {
-    "node": "22.x"
-  },
-  "scripts": {
-    "postinstall": "prisma generate",
-    "start": "ts-node src/index.ts",
-    "dev": "nodemon src/index.ts",
-    "build": "tsc",
-    "test": "npm-run-all test:*",
-    "test:audit": "npm audit",
-    "test:types": "tsc --noEmit --incremental false",
-    "test:lint": "biome check . --diagnostic-level=error"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "2.2.4",
-    "@types/express": "5.0.3",
-    "@types/qrcode": "1.5.5",
-    "nodemon": "3.1.10",
-    "npm-run-all": "4.1.5",
-    "prisma": "6.13.0",
-    "ts-node": "10.9.2"
-  },
-  "dependencies": {
-    "@prisma/client": "6.13.0",
-    "axios": "1.10.0",
-    "dotenv": "16.5.0",
-    "express": "5.1.0",
-    "js-sha3": "0.9.3",
-    "qrcode": "1.5.4",
-    "telegraf": "4.16.3",
-    "typescript": "5.8.3"
-  }
+    "name": "frkn-vpn-bot",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "engines": {
+        "node": "24.x"
+    },
+    "scripts": {
+        "postinstall": "prisma generate",
+        "start": "node --loader ts-node/esm src/index.ts",
+        "dev": "nodemon --exec node --loader ts-node/esm src/index.ts",
+        "build": "tsc",
+        "test:types": "tsc --noEmit",
+        "test:lint": "biome check . --diagnostic-level=error"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "2.2.4",
+        "@types/node": "^22.0.0",
+        "@types/qrcode": "1.5.5",
+        "nodemon": "3.1.10",
+        "prisma": "6.13.0",
+        "ts-node": "10.9.2",
+        "tsx": "4.21.0",
+        "typescript": "5.8.3"
+    },
+    "dependencies": {
+        "@grammyjs/conversations": "^1.2.0",
+        "@prisma/client": "6.13.0",
+        "axios": "1.10.0",
+        "dotenv": "16.5.0",
+        "grammy": "^1.30.0",
+        "js-sha3": "0.9.3",
+        "qrcode": "1.5.4"
+    }
 }

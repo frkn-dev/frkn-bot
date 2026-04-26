@@ -1,0 +1,15 @@
+[Unit]
+Description=FRKN Telegram Bot (TypeScript)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/frkn-bot/frkn-bot
+EnvironmentFile=/opt/frkn-bot/frkn-bot/.env
+ExecStart=node /opt/frkn-bot/frkn-bot/dist/index.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target`
