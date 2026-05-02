@@ -1,4 +1,4 @@
-name: Release
+name: frkn-bot build
 
 on:
   push:
@@ -9,7 +9,6 @@ on:
 jobs:
   build-bot:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -17,10 +16,23 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 24
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
 
       - name: Build TypeScript
         run: npm run build
+
+      - name: Prepare Artifact
+        run: |
+          tar -czf frkn-bot.tar.gz dist/ package.json package-lock.json
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frkn-bot-dist
+          path: frkn-bot.tar.gz
+          if-no-files-found: error
+          retention-days: 7

@@ -8,6 +8,7 @@ import {
   createConversation,
 } from "@grammyjs/conversations";
 import axios from "axios";
+
 type MyContext = Context & ConversationFlavor;
 
 const bot = new Bot<MyContext>(process.env.BOT_TOKEN!);
@@ -477,9 +478,18 @@ bot.callbackQuery("get_trial", async (ctx) => {
 
       const keyboard = await getMainMenu(userId);
 
-      await ctx.editMessageText(
-        `✅ Триал выдан\nID: <code>${subId}</code>`,
-        { parse_mode: "HTML", reply_markup: keyboard }
+      await ctx.reply(
+        `✅ Твой Триал выдан!\n\n` +
+        `📋 ID подписки: <code>${subId}</code>\n\n` +
+        `👇 Нажми на кнопку ниже, чтобы скопировать ID`,
+        {
+          parse_mode: "HTML",
+          reply_markup: new InlineKeyboard()
+            .text("📋 Скопировать ID", `copy_${subId}`)
+            .webApp("🚀 Открыть миниапп", `https://frkn.org/app/?id=${subId}`)
+            .row()
+            .text("✅ Понятно", "close")
+        }
       );
     } else {
       await ctx.reply("❌ Не удалось выдать триал.");
@@ -506,4 +516,5 @@ bot.callbackQuery("feedback_start", async (ctx) => {
 });
 
 bot.start();
+
 console.log("🤖 Бот запущен");
