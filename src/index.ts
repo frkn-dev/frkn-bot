@@ -143,7 +143,9 @@ async function activateKeyConversation(
   const waitMsg = await ctx.reply("⏳ Активирую...");
 
   if (!user?.subscriptionId) {
-    const waitMsg = await ctx.reply("😶 Подписка не найдена...");
+    const waitMsg = await ctx.reply(
+      "😶 Подписка не найдена... Начни с тест-драйва",
+    );
     return;
   }
 
@@ -159,31 +161,15 @@ async function activateKeyConversation(
     );
 
     if (res.status === 200) {
-      const sub = res.data?.response?.instance?.Subscription;
-      const subId = sub?.id;
-
-      if (!subId) throw new Error("No subscription ID in response");
-
-      await conversation.external(() =>
-        prisma.telegramUser.upsert({
-          where: { id: BigInt(userId) },
-          update: { subscriptionId: subId },
-          create: {
-            id: BigInt(userId),
-            subscriptionId: subId,
-            username: ctx.from?.username,
-          },
-        }),
-      );
+      const key = res.data?.response?.instance?.Key;
+      const keyId = key?.id;
 
       const keyboard = await getMainMenu(userId);
 
       await ctx.api.editMessageText(
         ctx.chat!.id,
         waitMsg.message_id,
-        `✅ Ключ активирован\n\nID: <code>${subId}</code>\nАктивна до: ${safeDate(
-          sub.expires_at,
-        )}`,
+        `✅ Спасибо Ключ активирован\n\n`,
         { parse_mode: "HTML", reply_markup: keyboard },
       );
     } else {
@@ -294,7 +280,7 @@ async function getMainMenu(userId: number) {
   if (!subId) {
     keyboard
       .row()
-      .text("🎁 Получить триал", "get_trial")
+      .text("🎁 Тест-драйв", "get_trial")
       .row()
       .text("🔑 У меня есть ID", "enter_subscription_id");
   }
@@ -517,4 +503,5 @@ bot.callbackQuery("feedback_start", async (ctx) => {
 
 bot.start();
 
-console.log("🤖 Бот запущен");
+console.log("🤖 Bot is running");
+console.log("version 0.2.0");
