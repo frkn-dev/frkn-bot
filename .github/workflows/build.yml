@@ -27,7 +27,7 @@ jobs:
 
       - name: Prepare Artifact
         run: |
-          tar -czf frkn-bot.tar.gz dist/ package.json package-lock.json
+          tar -czf frkn-bot.tar.gz dist/ package.json package-lock.json schema.prisma
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4

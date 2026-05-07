@@ -21,17 +21,12 @@ const headers = {
 
 const BASE =
   process.env.NODE_ENV === "development"
-    ? "http://localhost:8000"
+    ? "http://localhost:8080"
     : "https://frkn.org";
-
-const AUTH_BASE =
-  process.env.NODE_ENV === "development"
-    ? "http://localhost:3005"
-    : "https://api.frkn.org";
 
 const API_BASE =
   process.env.NODE_ENV === "development"
-    ? "http://localhost:5005"
+    ? "http://localhost:3000"
     : "https://api.frkn.org";
 
 // ---------- GLOBAL ERROR HANDLING ----------
@@ -56,21 +51,23 @@ function safeDate(date?: string) {
   return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("ru-RU");
 }
 
-function extractTelegramUser(ctx: MyContext)
-{ if (!ctx.from) return null;
-    return {
-        id: BigInt(ctx.from.id),
-        username: ctx.from.username,
-        firstName: ctx.from.first_name,
-        lastName: ctx.from.last_name,
-        languageCode: ctx.from.language_code,
-        isPremium: ctx.from.is_premium ?? false, }; }
+function extractTelegramUser(ctx: MyContext) {
+  if (!ctx.from) return null;
+  return {
+    id: BigInt(ctx.from.id),
+    username: ctx.from.username,
+    firstName: ctx.from.first_name,
+    lastName: ctx.from.last_name,
+    languageCode: ctx.from.language_code,
+    isPremium: ctx.from.is_premium ?? false,
+  };
+}
 
 // ---------- CONVERSATIONS ----------
 
 async function feedbackConversation(
   conversation: Conversation<MyContext>,
-  ctx: MyContext
+  ctx: MyContext,
 ) {
   if (!ctx.from) return;
 
@@ -101,29 +98,25 @@ async function feedbackConversation(
 ${text}
 `;
 
-  await ctx.api.sendMessage(
-    process.env.ADMIN_CHAT_ID!,
-    payload,
-    {
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: "💬 Ответить пользователю",
-              url: `https://t.me/${user.username ?? ""}`,
-            },
-          ],
+  await ctx.api.sendMessage(process.env.ADMIN_CHAT_ID!, payload, {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: "💬 Ответить пользователю",
+            url: `https://t.me/${user.username ?? ""}`,
+          },
         ],
-      },
-    }
-  );
+      ],
+    },
+  });
 
   await ctx.reply("✅ Спасибо! Сообщение отправлено.");
 }
 
 async function activateKeyConversation(
   conversation: Conversation<MyContext>,
-  ctx: MyContext
+  ctx: MyContext,
 ) {
   if (!ctx.from) return;
   const userId = ctx.from.id;
@@ -140,7 +133,7 @@ async function activateKeyConversation(
   const user = await conversation.external(() =>
     prisma.telegramUser.findUnique({
       where: { id: BigInt(userId) },
-    })
+    }),
   );
 
   if (code.length < 10) {
@@ -158,7 +151,11 @@ async function activateKeyConversation(
 
   try {
     const res = await conversation.external(() =>
-      axios.post(`${AUTH_BASE}/activate`, { code: code, subscription_id: subscriptionId, }, { headers, timeout: 5000 })
+      axios.post(
+        `${API_BASE}/key/activate`,
+        { code: code, subscription_id: subscriptionId },
+        { headers, timeout: 5000 },
+      ),
     );
 
     if (res.status === 200) {
@@ -176,7 +173,7 @@ async function activateKeyConversation(
             subscriptionId: subId,
             username: ctx.from?.username,
           },
-        })
+        }),
       );
 
       const keyboard = await getMainMenu(userId);
@@ -185,9 +182,9 @@ async function activateKeyConversation(
         ctx.chat!.id,
         waitMsg.message_id,
         `✅ Ключ активирован\n\nID: <code>${subId}</code>\nАктивна до: ${safeDate(
-          sub.expires_at
+          sub.expires_at,
         )}`,
-        { parse_mode: "HTML", reply_markup: keyboard }
+        { parse_mode: "HTML", reply_markup: keyboard },
       );
     } else {
       await ctx.reply("❌ Ошибка активации.");
@@ -210,7 +207,7 @@ async function activateKeyConversation(
 
 async function enterSubscriptionIdConversation(
   conversation: Conversation<MyContext>,
-  ctx: MyContext
+  ctx: MyContext,
 ) {
   if (!ctx.from) return;
   const userId = ctx.from.id;
@@ -236,7 +233,7 @@ async function enterSubscriptionIdConversation(
       axios.get(`${API_BASE}/subscription/${subscriptionId}`, {
         headers,
         timeout: 5000,
-      })
+      }),
     );
 
     if (res.status === 200 && res.data?.id) {
@@ -249,16 +246,16 @@ async function enterSubscriptionIdConversation(
             subscriptionId,
             username: ctx.from?.username,
           },
-        })
+        }),
       );
 
       const keyboard = await getMainMenu(userId);
 
       await ctx.reply(
         `✅ Подписка привязана\n\nID: <code>${subscriptionId}</code>\nАктивна до: ${safeDate(
-          res.data.expires
+          res.data.expires,
         )}`,
-        { parse_mode: "HTML", reply_markup: keyboard }
+        { parse_mode: "HTML", reply_markup: keyboard },
       );
     } else {
       await ctx.reply("❌ Подписка не найдена.");
@@ -287,18 +284,23 @@ async function getMainMenu(userId: number) {
     .webApp("🚀 Моя подписка(miniapp)", `https://frkn.org/app/?id=${subId}`)
     .row()
     .url("💎 Купить Ключ Активации", "https://frkn.org/pay")
-    .row().text("🔑 У меня есть Ключ Активации", "start_activation")
-    .row().text("📦 Поддерживаемые Приложения", "clients_menu")
-    .row().text("💬 Фидбек / Вопрос", "feedback_start");
+    .row()
+    .text("🔑 У меня есть Ключ Активации", "start_activation")
+    .row()
+    .text("📦 Поддерживаемые Приложения", "clients_menu")
+    .row()
+    .text("💬 Фидбек / Вопрос", "feedback_start");
 
   if (!subId) {
-    keyboard.row().text("🎁 Получить триал", "get_trial")
-    .row().text("🔑 У меня есть ID", "enter_subscription_id");
+    keyboard
+      .row()
+      .text("🎁 Получить триал", "get_trial")
+      .row()
+      .text("🔑 У меня есть ID", "enter_subscription_id");
   }
 
   return keyboard;
 }
-
 
 bot.command("clients", async (ctx) => {
   const keyboard = new InlineKeyboard()
@@ -319,14 +321,14 @@ bot.callbackQuery("clients_ios", async (ctx) => {
   await ctx.answerCallbackQuery();
 
   await ctx.reply(
-`📱 iOS клиенты:
+    `📱 iOS клиенты:
 
 • Shadowrocket (рекомендуем ⭐)
 • Stash
 • Quantumult X
 • Streisand
 
-💡 Лучший выбор: Shadowrocket`
+💡 Лучший выбор: Shadowrocket`,
   );
 });
 
@@ -334,14 +336,14 @@ bot.callbackQuery("clients_android", async (ctx) => {
   await ctx.answerCallbackQuery();
 
   await ctx.reply(
-`🤖 Android клиенты:
+    `🤖 Android клиенты:
 
 • v2rayNG (рекомендуем ⭐)
 • NekoBox
 • Clash for Android
 • Hiddify Next
 
-💡 Лучший выбор: v2rayNG`
+💡 Лучший выбор: v2rayNG`,
   );
 });
 
@@ -349,14 +351,14 @@ bot.callbackQuery("clients_windows", async (ctx) => {
   await ctx.answerCallbackQuery();
 
   await ctx.reply(
-`🪟 Windows клиенты:
+    `🪟 Windows клиенты:
 
 • Clash Verge Rev (рекомендуем ⭐)
 • V2rayN
 • Nekoray
 • Hiddify Next
 
-💡 Лучший выбор: Clash Verge Rev`
+💡 Лучший выбор: Clash Verge Rev`,
   );
 });
 
@@ -364,14 +366,14 @@ bot.callbackQuery("clients_macos", async (ctx) => {
   await ctx.answerCallbackQuery();
 
   await ctx.reply(
-`🍎 macOS клиенты:
+    `🍎 macOS клиенты:
 
 • ClashX Pro (рекомендуем ⭐)
 • V2rayU
 • Stash (если доступен)
 • Hiddify Next
 
-💡 Лучший выбор: ClashX Pro`
+💡 Лучший выбор: ClashX Pro`,
   );
 });
 
@@ -379,14 +381,14 @@ bot.callbackQuery("clients_linux", async (ctx) => {
   await ctx.answerCallbackQuery();
 
   await ctx.reply(
-`🐧 Linux клиенты:
+    `🐧 Linux клиенты:
 
 • Clash Verge
 • Hiddify CLI
 • v2rayA
 • Nekoray
 
-💡 Лучший выбор: Clash Verge`
+💡 Лучший выбор: Clash Verge`,
   );
 });
 
@@ -420,33 +422,32 @@ bot.command("start", async (ctx) => {
 
   const tgUser = extractTelegramUser(ctx);
 
-    if (tgUser) {
-      await prisma.telegramUser.upsert({
-        where: { id: tgUser.id },
-        update: {
-          username: tgUser.username,
-          firstName: tgUser.firstName,
-          lastName: tgUser.lastName,
-          languageCode: tgUser.languageCode,
-          isPremium: tgUser.isPremium,
-        },
-        create: {
-          id: tgUser.id,
-          username: tgUser.username,
-          firstName: tgUser.firstName,
-          lastName: tgUser.lastName,
-          languageCode: tgUser.languageCode,
-          isPremium: tgUser.isPremium,
-        },
-      });
-    }
+  if (tgUser) {
+    await prisma.telegramUser.upsert({
+      where: { id: tgUser.id },
+      update: {
+        username: tgUser.username,
+        firstName: tgUser.firstName,
+        lastName: tgUser.lastName,
+        languageCode: tgUser.languageCode,
+        isPremium: tgUser.isPremium,
+      },
+      create: {
+        id: tgUser.id,
+        username: tgUser.username,
+        firstName: tgUser.firstName,
+        lastName: tgUser.lastName,
+        languageCode: tgUser.languageCode,
+        isPremium: tgUser.isPremium,
+      },
+    });
+  }
 
   const keyboard = await getMainMenu(ctx.from.id);
 
-  await ctx.reply(
-    `Привет, ${ctx.from.first_name || "зай"} 🚀`,
-    { reply_markup: keyboard }
-  );
+  await ctx.reply(`Привет, ${ctx.from.first_name || "зай"} 🚀`, {
+    reply_markup: keyboard,
+  });
 });
 
 bot.callbackQuery("get_trial", async (ctx) => {
@@ -457,10 +458,9 @@ bot.callbackQuery("get_trial", async (ctx) => {
 
   try {
     const res = await axios.post(
-      `${AUTH_BASE}/tg-trial`,
-      {referred_by: "TG",
-          telegram_id: userId.toString() },
-      { headers, timeout: 5000 }
+      `${API_BASE}/trial`,
+      { referred_by: "TG" },
+      { headers, timeout: 5000 },
     );
 
     if (res.status === 200) {
@@ -480,16 +480,16 @@ bot.callbackQuery("get_trial", async (ctx) => {
 
       await ctx.reply(
         `✅ Твой Триал выдан!\n\n` +
-        `📋 ID подписки: <code>${subId}</code>\n\n` +
-        `👇 Нажми на кнопку ниже, чтобы скопировать ID`,
+          `📋 ID подписки: <code>${subId}</code>\n\n` +
+          `👇 Нажми на кнопку ниже, чтобы скопировать ID`,
         {
           parse_mode: "HTML",
           reply_markup: new InlineKeyboard()
             .text("📋 Скопировать ID", `copy_${subId}`)
             .webApp("🚀 Открыть миниапп", `https://frkn.org/app/?id=${subId}`)
             .row()
-            .text("✅ Понятно", "close")
-        }
+            .text("✅ Понятно", "close"),
+        },
       );
     } else {
       await ctx.reply("❌ Не удалось выдать триал.");
