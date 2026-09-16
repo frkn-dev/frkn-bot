@@ -312,6 +312,8 @@ async function getMainMenu(userId: number) {
 		.row()
 		.text("📦 Поддерживаемые Приложения", "clients_menu")
 		.row()
+		.url("📱 Скачать FRKN Dopamine", "https://frkn.org/dopamine")
+		.row()
 		.text("🌐 Бесплатные телеграм прокси", "free_proxies")
 		.row()
 		.text("💬 Фидбек / Вопрос", "feedback_start");
