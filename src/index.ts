@@ -319,11 +319,7 @@ async function getMainMenu(userId: number) {
 		.text("💬 Фидбек / Вопрос", "feedback_start");
 
 	if (!subId) {
-		keyboard
-			.row()
-			.text("🎁 Попробовать — 1 ГБ за 67₽", "buy_gb")
-			.row()
-			.text("🔑 У меня есть ID", "enter_subscription_id");
+		keyboard.row().text("🔑 У меня есть ID", "enter_subscription_id");
 	}
 
 	return keyboard;
